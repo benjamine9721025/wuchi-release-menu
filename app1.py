@@ -116,9 +116,48 @@ html_code = textwrap.dedent("""
             padding: 20px;
         }
 
+
+
+        .line-success-box {
+            background: #1a1a1a;
+            border: 3px solid var(--neon-red);
+            padding: 30px;
+            width: 100%;
+            max-width: 460px;
+            text-align: center;
+            clip-path: polygon(0 0, 100% 5%, 100% 100%, 5% 95%);
+        }
+
+        .line-qr {
+            background: white;
+            padding: 12px;
+            border-radius: 10px;
+            margin: 15px auto;
+            width: 240px;
+            height: 240px;
+        }
+
+        .line-green-button {
+            display: inline-block;
+            background: #06C755;
+            color: white;
+            padding: 16px 28px;
+            border-radius: 10px;
+            font-size: 1.2rem;
+            font-weight: 900;
+            text-decoration: none;
+            margin-top: 15px;
+        }
+
+        .desktop-line { display: block; }
+        .mobile-line { display: none; }
+
         @media (max-width: 600px) {
             .main-title { font-size: 2.5rem; }
             .menu-grid { grid-template-columns: 1fr; }
+            .desktop-line { display: none; }
+            .mobile-line { display: block; }
+            .line-success-box { max-width: 360px; padding: 24px; }
         }
     </style>
 </head>
@@ -246,15 +285,36 @@ html_code = textwrap.dedent("""
             // formData.append("entry.XXXXXXXXX", finalSummary);
 
             const lineAccountURL = "https://lin.ee/TsaTPgw";
+            const lineQRURL = "https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=" + encodeURIComponent(lineAccountURL);
 
             fetch(formURL, {
                 method: "POST",
                 mode: "no-cors",
                 body: formData
             }).then(() => {
-                alert("【37•21 體驗工作室】\\n預約成功！資料已送出。\\n\\n確認後將導向 LINE 官方帳號，\\n請傳送「預約確認」與我們聯繫。\\n\\n" + finalSummary);
-                closeBookingForm();
-                window.location.href = lineAccountURL;
+                const overlay = document.getElementById('booking-form-overlay');
+
+                overlay.innerHTML = `
+                    <div class="line-success-box">
+                        <h2 style="font-family: var(--font-heading); color: var(--neon-red); margin-top: 0;">預約成功</h2>
+                        <p style="color:#ccc; line-height:1.6;">資料已送出，請加入官方 LINE，並傳送「預約確認」。</p>
+                        <p style="color: var(--warning-yellow); font-size: 0.95rem; line-height:1.6;">${finalSummary}</p>
+
+                        <div class="desktop-line">
+                            <p style="color:#aaa;">電腦版請用手機掃描 QR Code 加入官方 LINE</p>
+                            <img class="line-qr" src="${lineQRURL}" alt="LINE 官方帳號 QR Code">
+                            <br>
+                            <a class="line-green-button" href="${lineAccountURL}" target="_blank" rel="noopener noreferrer">開啟官方 LINE</a>
+                        </div>
+
+                        <div class="mobile-line">
+                            <p style="color:#aaa;">手機版請點下方按鈕加入官方 LINE</p>
+                            <a class="line-green-button" href="${lineAccountURL}" target="_blank" rel="noopener noreferrer">加入官方 LINE</a>
+                        </div>
+                    </div>
+                `;
+
+                overlay.style.display = 'flex';
             }).catch((error) => {
                 alert("傳送失敗，請檢查網路連線或聯繫店員。");
                 console.error("Error!", error.message);
