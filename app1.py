@@ -245,7 +245,7 @@ html_code = textwrap.dedent("""
             // 如果 Google 表單之後新增「體驗項目/金額」欄位，再把下面 entry.XXXXXXXXX 換成新欄位 ID
             // formData.append("entry.XXXXXXXXX", finalSummary);
 
-            const lineAccountURL = "https://line.me/R/ti/p/@230iknaq";
+            const lineAccountURL = "https://lin.ee/TsaTPgw";
 
             fetch(formURL, {
                 method: "POST",
