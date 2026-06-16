@@ -117,47 +117,32 @@ html_code = textwrap.dedent("""
         }
 
 
-
-        .line-success-box {
-            background: #1a1a1a;
-            border: 3px solid var(--neon-red);
-            padding: 30px;
-            width: 100%;
-            max-width: 460px;
-            text-align: center;
-            clip-path: polygon(0 0, 100% 5%, 100% 100%, 5% 95%);
-        }
-
-        .line-qr {
-            background: white;
+        .selected-plan-box {
+            margin-bottom: 15px;
+            text-align: left;
+            background: rgba(247, 209, 23, 0.08);
+            border: 1px solid var(--warning-yellow);
             padding: 12px;
-            border-radius: 10px;
-            margin: 15px auto;
-            width: 240px;
-            height: 240px;
-        }
-
-        .line-green-button {
-            display: inline-block;
-            background: #06C755;
             color: white;
-            padding: 16px 28px;
-            border-radius: 10px;
-            font-size: 1.2rem;
-            font-weight: 900;
-            text-decoration: none;
-            margin-top: 15px;
+            line-height: 1.5;
         }
 
-        .desktop-line { display: block; }
-        .mobile-line { display: none; }
+        .selected-plan-label {
+            display: block;
+            color: var(--warning-yellow);
+            margin-bottom: 5px;
+            font-weight: 900;
+        }
+
+        .selected-plan-text {
+            color: #fff;
+            font-size: 1rem;
+            word-break: break-word;
+        }
 
         @media (max-width: 600px) {
             .main-title { font-size: 2.5rem; }
             .menu-grid { grid-template-columns: 1fr; }
-            .desktop-line { display: none; }
-            .mobile-line { display: block; }
-            .line-success-box { max-width: 360px; padding: 24px; }
         }
     </style>
 </head>
@@ -206,6 +191,11 @@ html_code = textwrap.dedent("""
                 <h2 style="font-family: var(--font-heading); color: var(--neon-red); margin-top: 0;">預約資料</h2>
                 <p style="color: #888; font-size: 0.8rem; margin-bottom: 20px;">※ 請填寫真實資料，體驗現場將核對預約資訊</p>
 
+                <div class="selected-plan-box">
+                    <span class="selected-plan-label">預約方案</span>
+                    <div id="selected-plan-display" class="selected-plan-text">尚未選擇</div>
+                </div>
+
                 <div style="margin-bottom: 15px; text-align:left;">
                     <label style="display: block; color: var(--warning-yellow); margin-bottom: 5px;">真實姓名</label>
                     <input type="text" id="user-name" placeholder="輸入姓名" style="width: 100%; background: #222; border: 1px solid #444; color: white; padding: 10px; font-size: 1rem;">
@@ -239,11 +229,21 @@ html_code = textwrap.dedent("""
             display.innerText = totalPrice;
         }
 
+        function getSelectedItemsText() {
+            return Array.from(document.querySelectorAll('.menu-card.active .item-name'))
+                        .map(el => el.innerText.trim())
+                        .join(', ');
+        }
+
         function openBookingForm() {
             if (totalPrice === 0) {
                 alert('請至少選擇一項體驗項目。');
                 return;
             }
+
+            const selectedItems = getSelectedItemsText();
+            document.getElementById('selected-plan-display').innerText = selectedItems;
+
             document.getElementById('booking-form-overlay').style.display = 'flex';
         }
 
@@ -261,10 +261,8 @@ html_code = textwrap.dedent("""
                 return;
             }
 
-            const selectedItems = Array.from(document.querySelectorAll('.menu-card.active .item-name'))
-                                      .map(el => el.innerText)
-                                      .join(', ');
-            const finalSummary = `項目: ${selectedItems} | 總計: NT$ ${totalPrice}`;
+            const selectedItems = getSelectedItemsText();
+            const finalSummary = `預約方案: ${selectedItems} | 總計: NT$ ${totalPrice}`;
 
             const parts = date.split('-');
             const year = parts[0];
@@ -281,40 +279,20 @@ html_code = textwrap.dedent("""
             formData.append("entry.342289764_month", month);
             formData.append("entry.342289764_day", day);
 
-            // 如果 Google 表單之後新增「體驗項目/金額」欄位，再把下面 entry.XXXXXXXXX 換成新欄位 ID
-            // formData.append("entry.XXXXXXXXX", finalSummary);
+            // Google 表單新增欄位「預約方案」後，請把 entry.XXXXXXXXX 改成該欄位實際的 entry ID
+            // 例如：formData.append("entry.123456789", selectedItems);
+            formData.append("entry.1936317149", selectedItems);
 
             const lineAccountURL = "https://lin.ee/TsaTPgw";
-            const lineQRURL = "https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=" + encodeURIComponent(lineAccountURL);
 
             fetch(formURL, {
                 method: "POST",
                 mode: "no-cors",
                 body: formData
             }).then(() => {
-                const overlay = document.getElementById('booking-form-overlay');
-
-                overlay.innerHTML = `
-                    <div class="line-success-box">
-                        <h2 style="font-family: var(--font-heading); color: var(--neon-red); margin-top: 0;">預約成功</h2>
-                        <p style="color:#ccc; line-height:1.6;">資料已送出，請加入官方 LINE，並傳送「預約確認」。</p>
-                        <p style="color: var(--warning-yellow); font-size: 0.95rem; line-height:1.6;">${finalSummary}</p>
-
-                        <div class="desktop-line">
-                            <p style="color:#aaa;">電腦版請用手機掃描 QR Code 加入官方 LINE</p>
-                            <img class="line-qr" src="${lineQRURL}" alt="LINE 官方帳號 QR Code">
-                            <br>
-                            <a class="line-green-button" href="${lineAccountURL}" target="_blank" rel="noopener noreferrer">開啟官方 LINE</a>
-                        </div>
-
-                        <div class="mobile-line">
-                            <p style="color:#aaa;">手機版請點下方按鈕加入官方 LINE</p>
-                            <a class="line-green-button" href="${lineAccountURL}" target="_blank" rel="noopener noreferrer">加入官方 LINE</a>
-                        </div>
-                    </div>
-                `;
-
-                overlay.style.display = 'flex';
+                alert("【37•21 體驗工作室】\\n預約成功！資料已送出。\\n\\n確認後將導向 LINE 官方帳號，\\n請傳送「預約確認」與我們聯繫。\\n\\n" + finalSummary);
+                closeBookingForm();
+                window.location.href = lineAccountURL;
             }).catch((error) => {
                 alert("傳送失敗，請檢查網路連線或聯繫店員。");
                 console.error("Error!", error.message);
